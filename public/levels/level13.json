@@ -1,0 +1,34 @@
+{
+    "name": "preservation",
+    "words": [
+        {
+            "initialWord": "start",
+            "targetWord": "detour"
+        },
+        {
+            "initialWord": "detour",
+            "targetWord": "detour"
+        },
+        {
+            "initialWord": "end",
+            "targetWord": "start"
+        }
+    ],
+    "rules": [
+        { "pattern": "t", "replacement": "", "environment": "V _" },
+        { "pattern": "", "replacement": "a", "environment": "C _ C" },
+        { "pattern": "t", "replacement": "a", "environment": "_ n" },
+        { "pattern": "uu", "replacement": "u" },
+        { "pattern": "n", "replacement": "r" },
+        { "pattern": "", "replacement": "s", "environment": "# _" },
+        { "pattern": "", "replacement": "a", "environment": "_ s" },
+        { "pattern": "s", "replacement": "d" },
+        { "pattern": "a", "replacement": "" },
+        { "pattern": "e", "replacement": "t" },
+        { "pattern": "", "replacement": "d", "environment": "# _" },
+        { "pattern": "VV", "replacement": "ou" },
+        { "pattern": "stt", "replacement": "de" },
+        { "pattern": "d", "replacement": "t" },
+        { "pattern": "", "replacement": "t", "environment": "e _ o" }
+    ]
+}
