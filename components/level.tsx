@@ -246,13 +246,22 @@ export default function LevelPage({
         console.log(items);
         setTimelineHeaderVisible(items.solution.length <= 0);
 
-        // TODO: fix this overriding viewed rule
-        const newWords = words.map((w, i) =>
-            applyRules(
-                items.solution.map((x) => x.rule),
-                level.words[i].initialWord,
-            ),
-        );
+        const newWords =
+            viewedRuleIndex === null
+                ? words.map((w, i) =>
+                      applyRules(
+                          items.solution.map((x) => x.rule),
+                          level.words[i].initialWord,
+                      ),
+                  )
+                : words.map((w, i) =>
+                      applyRules(
+                          items.solution
+                              .slice(0, viewedRuleIndex + 1)
+                              .map((x) => x.rule),
+                          level.words[i].initialWord,
+                      ),
+                  );
 
         setWords(newWords);
 
@@ -362,7 +371,7 @@ export default function LevelPage({
                 console.log(clone.style);
 
                 document.body.appendChild(clone);
-                const isOverflowing = clone.scrollWidth > el.clientWidth;
+                const isOverflowing = clone.scrollWidth > el.clientWidth - 50;
                 console.log(clone.scrollWidth);
                 console.log(el.clientWidth);
                 document.body.removeChild(clone);
@@ -584,7 +593,7 @@ export default function LevelPage({
                 </motion.div>
                 <motion.div
                     layout
-                    className={`relative transition-colors col-start-1 col-end-3 row-start-1 row-end-2 lg:col-start-2 flex flex-wrap lg:max-2xl:flex-col lg:max-2xl:flex-nowrap ${isWordOverflowing.includes(true) && "flex-col flex-nowrap"} ${words.length === 2 && "flex-col"} h-full items-center justify-center text-5xl ${words.length > 2 ? "lg:text-7xl 2xl:text-9xl" : "lg:text-9xl"} font-bold ${success && "text-green-500"}`}
+                    className={`relative transition-colors col-start-1 col-end-3 row-start-1 row-end-2 lg:col-start-2 flex lg:max-2xl:flex-col lg:max-2xl:flex-nowrap ${isWordOverflowing.includes(true) ? "flex-col flex-nowrap" : "flex-wrap"} ${words.length === 2 && "flex-col"} h-full items-center justify-center text-5xl ${words.length > 2 ? "lg:text-7xl 2xl:text-9xl" : "lg:text-9xl"} font-bold ${success && "text-green-500"}`}
                 >
                     {words.map((word, wordIndex) => (
                         <div
