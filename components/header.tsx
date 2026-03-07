@@ -25,8 +25,11 @@ export default function Header({
                     </Link>
                 </nav>
                 <header className="flex flex-col items-center text-lg">
-                    <h1 className="font-bold text-4xl">Level {levelNum}</h1>
-                    <p>{level.name}</p>
+                    <h1 className="font-bold text-4xl">
+                        {levelNumInt === null ? "" : "Level "}
+                        {levelNum}
+                    </h1>
+                    <p className="text-center">{level.name}</p>
                     {/* <p>
                         <span className="font-bold">Goal:</span>{" "}
                         {level.initialWord} → {level.targetWord}

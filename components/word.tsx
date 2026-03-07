@@ -22,7 +22,7 @@ export default function Word({
             ref={measure ? refs[wordIndex] : refs[wordIndex]}
             className={`flex flex-col gap-4 items-center justify-center ${measure ? "fixed invisible w-auto" : "w-1/2 h-1/2"}`}
         >
-            <div>
+            <div className="text-center">
                 {[...word].map((letter, i) => (
                     <span
                         key={i}

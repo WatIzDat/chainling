@@ -28,7 +28,7 @@ import {
 import { motion } from "motion/react";
 import { InfoIcon, RotateCcwIcon } from "lucide-react";
 import { Howl, Howler } from "howler";
-import { isNumeric, usePrevious } from "@/lib/utils";
+import { isNumeric } from "@/lib/utils";
 import { isEqual } from "lodash-es";
 import {
     Tooltip,
@@ -49,6 +49,7 @@ import {
     HybridTooltipTrigger,
 } from "./ui/hybrid-tooltip";
 import Word from "./word";
+import { usePrevious } from "@/lib/hooks";
 
 function SortableButton({
     ref,

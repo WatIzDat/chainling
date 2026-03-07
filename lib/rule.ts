@@ -1,3 +1,5 @@
+import { escapeRegExp } from "lodash-es";
+
 export interface Rule {
     pattern: string;
     replacement: string;
@@ -26,7 +28,7 @@ export function applyRule(
     const naturalClassRe = new RegExp("\\[.*\\]|C|V", "g");
 
     if (!rule.environment) {
-        let reStr = rule.pattern;
+        let reStr = escapeRegExp(rule.pattern);
 
         [...reStr.matchAll(naturalClassRe)].map((match) => {
             reStr = reStr.replace(match[0], naturalClassToRegex[match[0]]);
@@ -108,12 +110,12 @@ export function applyRule(
 
         if (environment[0][0] === "#") {
             if (environment[0].length > 1) {
-                left = `(?<=^${environment[0].substring(1)})`;
+                left = `(?<=^${escapeRegExp(environment[0].substring(1))})`;
             } else {
                 left = `^`;
             }
         } else {
-            left = `(?<=${environment[0]})`;
+            left = `(?<=${escapeRegExp(environment[0])})`;
         }
     }
 
@@ -127,16 +129,16 @@ export function applyRule(
 
         if (environment[2][environment[2].length - 1] === "#") {
             if (environment[2].length > 1) {
-                right = `(?=${environment[2].substring(0, environment[2].length - 1)}$)`;
+                right = `(?=${escapeRegExp(environment[2].substring(0, environment[2].length - 1))}$)`;
             } else {
                 right = `$`;
             }
         } else {
-            right = `(?=${environment[2]})`;
+            right = `(?=${escapeRegExp(environment[2])})`;
         }
     }
 
-    let reStr = `${left}${rule.pattern}${right}`;
+    let reStr = `${left}${escapeRegExp(rule.pattern)}${right}`;
 
     [...reStr.matchAll(naturalClassRe)].map((match) => {
         reStr = reStr.replace(match[0], naturalClassToRegex[match[0]]);

@@ -1,0 +1,12 @@
+{
+    "name": "thank you to everyone, and you!",
+    "words": [
+        {
+            "initialWord": "WatIzDat (dev)",
+            "targetWord": "JDSherbert (sounds)"
+        }
+    ],
+    "rules": [
+        { "pattern": "WatIzDat (dev)", "replacement": "JDSherbert (sounds)" }
+    ]
+}
