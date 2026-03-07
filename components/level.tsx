@@ -349,15 +349,15 @@ export default function LevelPage({
     );
 
     useEffect(() => {
-        for (let i = 0; i < wordRefs.length; i++) {
-            const el = wordRefs[i].current;
+        wordRefs.forEach((ref, i) => {
+            const el = ref.current;
             const measure = measureRefs[i].current;
 
             if (!el || !measure) {
                 return;
             }
 
-            const check = () => {
+            const check = (i: number) => {
                 // const clone = el.cloneNode(true) as HTMLElement;
                 // const computed = getComputedStyle(el).fontSize;
 
@@ -385,19 +385,26 @@ export default function LevelPage({
 
                 const isOverflowing = measure.scrollWidth > el.clientWidth - 50;
 
-                setIsWordOverflowing(
-                    isWordOverflowing.map((_, j) =>
-                        j === i ? isOverflowing : isWordOverflowing[j],
-                    ),
+                // console.log(words[i] + " " + measure.scrollWidth);
+                // console.log(words[i] + " " + el.clientWidth);
+                // console.log(
+                //     isWordOverflowing.map((_, j) =>
+                //         j === i ? isOverflowing : isWordOverflowing[j],
+                //     ),
+                // );
+
+                setIsWordOverflowing((prev) =>
+                    prev.map((_, j) => (j === i ? isOverflowing : prev[j])),
                 );
             };
 
-            const observer = new ResizeObserver(check);
+            console.log(i);
+            const observer = new ResizeObserver(() => check(i));
             observer.observe(el);
-            check();
+            check(i);
 
             return () => observer.disconnect();
-        }
+        });
     }, [words]);
 
     return (
