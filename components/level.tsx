@@ -354,18 +354,28 @@ export default function LevelPage({
         useRef<HTMLDivElement>(null),
     );
     // console.log(wordRefs);
+    const isWordOverflowingRef = useRef(
+        [...Array(level.words.length)].map((_) => false),
+    );
     const [isWordOverflowing, setIsWordOverflowing] = useState(
         [...Array(level.words.length)].map((_) => false),
     );
 
+    // const observerRefs = useRef<(ResizeObserver | null)[]>(
+    //     [...Array(level.words.length)].map(() => null),
+    // );
+
     useEffect(() => {
-        wordRefs.forEach((ref, i) => {
+        // observerRefs.current.forEach((observer) => observer?.disconnect());
+        const cleanup = wordRefs.map((ref, i) => {
             const el = ref.current;
             const measure = measureRefs[i].current;
 
             if (!el || !measure) {
-                return;
+                return () => {};
             }
+
+            let timeout: ReturnType<typeof setTimeout>;
 
             const check = (i: number) => {
                 // const clone = el.cloneNode(true) as HTMLElement;
@@ -393,19 +403,28 @@ export default function LevelPage({
                 // const isOverflowing = clone.scrollWidth > el.clientWidth - 50;
                 // document.body.removeChild(clone);
 
-                const isOverflowing = measure.scrollWidth > el.clientWidth - 50;
+                clearTimeout(timeout!);
+                timeout = setTimeout(() => {
+                    const isOverflowing =
+                        measure.scrollWidth > el.clientWidth - 50;
 
-                // console.log(words[i] + " " + measure.scrollWidth);
-                // console.log(words[i] + " " + el.clientWidth);
-                // console.log(
-                //     isWordOverflowing.map((_, j) =>
-                //         j === i ? isOverflowing : isWordOverflowing[j],
-                //     ),
-                // );
+                    // console.log(words[i] + " " + measure.scrollWidth);
+                    // console.log(words[i] + " " + el.clientWidth);
+                    // console.log(
+                    //     isWordOverflowing.map((_, j) =>
+                    //         j === i ? isOverflowing : isWordOverflowing[j],
+                    //     ),
+                    // );
 
-                setIsWordOverflowing((prev) =>
-                    prev.map((_, j) => (j === i ? isOverflowing : prev[j])),
-                );
+                    if (isWordOverflowingRef.current[i] !== isOverflowing) {
+                        isWordOverflowingRef.current[i] = isOverflowing;
+                        setIsWordOverflowing((prev) =>
+                            prev.map((_, j) =>
+                                j === i ? isOverflowing : prev[j],
+                            ),
+                        );
+                    }
+                }, 50);
             };
 
             console.log(i);
@@ -413,8 +432,15 @@ export default function LevelPage({
             observer.observe(el);
             check(i);
 
-            return () => observer.disconnect();
+            // observerRefs.current[i] = observer;
+
+            return () => {
+                observer.disconnect();
+                clearTimeout(timeout);
+            };
         });
+
+        return () => cleanup.forEach((c) => c());
     }, [words]);
 
     return (
