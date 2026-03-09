@@ -3,6 +3,7 @@ import LevelPage from "@/components/level";
 import LevelLayout from "@/components/level-layout";
 import { Button } from "@/components/ui/button";
 import { Level } from "@/lib/level";
+import { isNumeric } from "@/lib/utils";
 import Link from "next/link";
 
 export default async function Page({
@@ -13,7 +14,7 @@ export default async function Page({
     const { level: levelNum } = await params;
 
     const response = await fetch(
-        `${process.env.BASE_URL}/levels/level${levelNum}.json`,
+        `${process.env.BASE_URL}/levels/${isNumeric(levelNum) ? "level" : ""}${levelNum}.json`,
     );
 
     const level: Level = await response.json();
