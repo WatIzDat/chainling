@@ -3,8 +3,6 @@ import { NUM_LEVELS } from "@/lib/level";
 import Link from "next/link";
 
 export default async function Home() {
-    // const numLevels = 15;
-
     return (
         <main className="flex flex-col gap-6 min-h-svh min-w-svw items-center justify-center p-12 text-3xl">
             <header className="text-center">

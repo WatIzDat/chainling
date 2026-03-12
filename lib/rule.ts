@@ -9,16 +9,6 @@ export interface Rule {
 const naturalClassToRegex: { [k: string]: string } = {
     C: "[^aeiou]",
     V: "[aeiou]",
-    // "[+voice]": "[bdgmn]",
-    // "[-voice]": "[ptk]",
-    // "[+nasal]": "[mn]",
-    // "[-nasal]": "[ptkbdg]",
-    // "[+high]": "[iu]",
-    // "[-high]": "[aeo]",
-    // "[+mid]": "[eo]",
-    // "[-mid]": "[aiu]",
-    // "[+low]": "[a]",
-    // "[-low]": "[eiou]",
 };
 
 export function applyRule(
@@ -36,12 +26,9 @@ export function applyRule(
 
         const re = new RegExp(reStr, "g");
 
-        // console.log(re);
-
         return [
             word.replaceAll(re, rule.replacement),
             [...word.matchAll(re)].flatMap((m) => {
-                // console.log(m);
                 return Array.from(
                     new Array(m[0].length),
                     (_, i) => i + m.index,
@@ -63,51 +50,7 @@ export function applyRule(
     let left: string = "";
     let right: string = "";
 
-    // if (environment.length === 3) {
-    //     // re = new RegExp(
-    //     //     `(?<=${environment[0]})${rule.pattern}(?=${environment[2]})`,
-    //     //     "g",
-    //     // );
-
-    //     if (environment[0][0] === "#") {
-    //         if (environment[0].length > 1) {
-    //             left = `^(?<=${environment[0].substring(1)})`;
-    //         } else {
-    //             left = `^`;
-    //         }
-    //     } else {
-    //         left = `(?<=${environment[0]})`;
-    //     }
-
-    //     if (environment[2][0] === "#") {
-    //         if (environment[2].length > 1) {
-    //             right = `(?=${environment[2].substring(1)})$`;
-    //         } else {
-    //             right = `$`;
-    //         }
-    //     } else {
-    //         right = `(?=${environment[2]})`;
-    //     }
-    // } else {
-    //     if (environment[1] === "_") {
-    //         re = new RegExp(`(?<=${environment[0]})${rule.pattern}`, "g");
-    //     } else {
-    //         re = new RegExp(`${rule.pattern}(?=${environment[1]})`, "g");
-    //     }
-    // }
-
-    // const naturalClassRe = new RegExp("\\[.*\\]|C|V", "g");
-
     if (environment[0]) {
-        // console.log([...environment[0].matchAll(naturalClassRe)]);
-
-        // [...environment[0].matchAll(naturalClassRe)].map((match) => {
-        //     environment[0] = environment[0]!.replace(
-        //         match[0],
-        //         naturalClassToRegex[match[0]],
-        //     );
-        // });
-
         if (environment[0][0] === "#") {
             if (environment[0].length > 1) {
                 left = `(?<=^${escapeRegExp(environment[0].substring(1))})`;
@@ -120,13 +63,6 @@ export function applyRule(
     }
 
     if (environment[2]) {
-        // [...environment[2].matchAll(naturalClassRe)].map((match) => {
-        //     environment[2] = environment[2]!.replace(
-        //         match[0],
-        //         naturalClassToRegex[match[0]],
-        //     );
-        // });
-
         if (environment[2][environment[2].length - 1] === "#") {
             if (environment[2].length > 1) {
                 right = `(?=${escapeRegExp(environment[2].substring(0, environment[2].length - 1))}$)`;
@@ -145,8 +81,6 @@ export function applyRule(
     });
 
     const re = new RegExp(reStr, "g");
-
-    // console.log(re);
 
     return [
         word.replace(re, rule.replacement),

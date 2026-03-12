@@ -2,8 +2,8 @@
 
 import { Rule, applyRule, applyRules, formatRule } from "@/lib/rule";
 import { move } from "@dnd-kit/helpers";
-import { DragDropProvider, useDraggable, useDroppable } from "@dnd-kit/react";
-import { isSortable, useSortable } from "@dnd-kit/react/sortable";
+import { DragDropProvider, useDroppable } from "@dnd-kit/react";
+import { useSortable } from "@dnd-kit/react/sortable";
 import {
     useState,
     useEffect,
@@ -20,29 +20,11 @@ import { Button } from "./ui/button";
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { Level, NUM_LEVELS } from "@/lib/level";
 import { clearTimeout, setTimeout } from "timers";
-import {
-    closestCenter,
-    pointerIntersection,
-    directionBiased,
-} from "@dnd-kit/collision";
 import { motion } from "motion/react";
 import { InfoIcon, RotateCcwIcon } from "lucide-react";
 import { Howl, Howler } from "howler";
 import { isNumeric } from "@/lib/utils";
 import { isEqual } from "lodash-es";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "./ui/tooltip";
-import {
-    Popover,
-    PopoverContent,
-    PopoverDescription,
-    PopoverHeader,
-    PopoverTrigger,
-} from "./ui/popover";
 import {
     HybridTooltip,
     HybridTooltipContent,
@@ -52,7 +34,6 @@ import Word from "./word";
 import { usePrevious } from "@/lib/hooks";
 
 function SortableButton({
-    ref,
     children,
     id,
     index,
@@ -63,7 +44,6 @@ function SortableButton({
     onLeave,
     onClick,
 }: {
-    ref?: RefObject<Element | null>;
     children: React.ReactNode;
     id: number;
     index: number;
@@ -80,16 +60,7 @@ function SortableButton({
         type: "item",
         accept: "item",
         group,
-        // collisionDetector: pointerIntersection,
     });
-
-    // function refs(node: Element | null) {
-    //     sortableRef(node);
-
-    //     if (ref) {
-    //         ref.current = node;
-    //     }
-    // }
 
     return (
         <Button
@@ -105,26 +76,6 @@ function SortableButton({
         </Button>
     );
 }
-
-// function UnsortableButton({
-//     children,
-//     id,
-//     className,
-//     style,
-// }: {
-//     children: React.ReactNode;
-//     id: number;
-//     className?: string;
-//     style?: CSSProperties;
-// }) {
-//     const { ref } = useDraggable({ id });
-
-//     return (
-//         <Button ref={ref} className={className} style={style}>
-//             {children}
-//         </Button>
-//     );
-// }
 
 function Column({
     ref,
@@ -161,29 +112,6 @@ function Column({
     );
 }
 
-// function Slot({ index }: { index: number }) {
-//     const { ref } = useDroppable({
-//         id: `slot-${index}`,
-//         type: "column",
-//         accept: "item",
-//         collisionPriority: CollisionPriority.High,
-//         // collisionDetector: ,
-//     });
-
-//     return (
-//         <div
-//             ref={ref}
-//             className="row-start-1 col-start-1 size-full bg-input rounded-xl text-center content-center text-muted-foreground select-none"
-//             // style={{
-//             //     gridRowStart: (index % 5) + 1,
-//             //     gridColumnStart: index / 5 + 1,
-//             // }}
-//         >
-//             {index}
-//         </div>
-//     );
-// }
-
 export default function LevelPage({
     level,
     levelNum,
@@ -193,11 +121,6 @@ export default function LevelPage({
     levelNum: string;
     setCompleted: Dispatch<SetStateAction<boolean>>;
 }) {
-    // const rules = [
-    //     { id: 0, rule: { pattern: "p", replacement: "f" } },
-    //     { id: 1, rule: { pattern: "t", replacement: "d" } },
-    // ];
-
     const rules = level.rules.map((rule, i) => ({ id: i, rule }));
 
     const [items, setItems] = useState<{
@@ -208,9 +131,6 @@ export default function LevelPage({
         solution: [],
     });
 
-    // const initialWord = level.initialWord;
-    // const targetWord = level.targetWord;
-
     const [words, setWords] = useState(level.words.map((w) => w.initialWord));
 
     const [affectedIndices, setAffectedIndices] = useState<number[][]>([]);
@@ -218,18 +138,14 @@ export default function LevelPage({
     const [viewedRuleIndex, setViewedRuleIndex] = useState<number | null>(null);
 
     const [success, setSuccess] = useState(false);
-    // const [completed, setCompleted] = useState(false);
+
     const isFirstSuccessRef = useRef(true);
 
-    // const [timeoutID, setTimeoutID] = useState<NodeJS.Timeout | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const [timelineHeaderVisible, setTimelineHeaderVisible] = useState(true);
 
-    const pickupSounds = [
-        new Howl({ src: ["sounds/cursor1.mp3"] }),
-        // new Howl({ src: ["sounds/cursor2.mp3"] }),
-    ];
+    const pickupSounds = [new Howl({ src: ["sounds/cursor1.mp3"] })];
 
     const dropSounds = [
         new Howl({ src: ["sounds/swipe1.mp3"], volume: 0.5 }),
@@ -246,10 +162,7 @@ export default function LevelPage({
 
     const levelNumInt = isNumeric(levelNum) ? Number.parseInt(levelNum) : null;
 
-    // console.log(levelNumInt);
-
     useEffect(() => {
-        // console.log(items);
         setTimelineHeaderVisible(items.solution.length <= 0);
 
         const newWords =
@@ -278,8 +191,6 @@ export default function LevelPage({
         let allEqual = true;
 
         for (let i = 0; i < newWords.length; i++) {
-            // console.log(newWords[i]);
-            // console.log(level.words[i].targetWord);
             if (newWords[i] !== level.words[i].targetWord) {
                 allEqual = false;
 
@@ -315,7 +226,6 @@ export default function LevelPage({
                 }
             }, 1000);
         } else {
-            // console.log("not success");
             setSuccess(false);
 
             if (timeoutRef.current !== null) {
@@ -330,22 +240,6 @@ export default function LevelPage({
         };
     }, [items, viewedRuleIndex]);
 
-    // const [ruleButtonHeight, setRuleButtonHeight] = useState(0);
-    // const ruleButtonRef = useRef<HTMLElement | null>(null);
-
-    // useEffect(() => {
-    //     setRuleButtonHeight(ruleButtonRef.current?.clientHeight!);
-    // });
-
-    // const [timelineHeight, setTimelineHeight] = useState(0);
-    // const timelineRef = useRef<HTMLDivElement | null>(null);
-
-    // useEffect(() => {
-    //     setTimelineHeight(timelineRef.current?.clientHeight!);
-    // });
-
-    // const snapshot = useRef(structuredClone(items));
-
     const wordRefs = [...Array(level.words.length)].map((_) =>
         useRef<HTMLDivElement>(null),
     );
@@ -353,7 +247,7 @@ export default function LevelPage({
     const measureRefs = [...Array(level.words.length)].map((_) =>
         useRef<HTMLDivElement>(null),
     );
-    // console.log(wordRefs);
+
     const isWordOverflowingRef = useRef(
         [...Array(level.words.length)].map((_) => false),
     );
@@ -361,12 +255,7 @@ export default function LevelPage({
         [...Array(level.words.length)].map((_) => false),
     );
 
-    // const observerRefs = useRef<(ResizeObserver | null)[]>(
-    //     [...Array(level.words.length)].map(() => null),
-    // );
-
     useEffect(() => {
-        // observerRefs.current.forEach((observer) => observer?.disconnect());
         const cleanup = wordRefs.map((ref, i) => {
             const el = ref.current;
             const measure = measureRefs[i].current;
@@ -378,43 +267,10 @@ export default function LevelPage({
             let timeout: ReturnType<typeof setTimeout>;
 
             const check = (i: number) => {
-                // const clone = el.cloneNode(true) as HTMLElement;
-                // const computed = getComputedStyle(el).fontSize;
-
-                // // Array.from(computed).forEach((key) => {
-                // //     clone.style.setProperty(
-                // //         key,
-                // //         computed.getPropertyValue(key),
-                // //     );
-                // // });
-
-                // Object.assign(clone.style, {
-                //     position: "fixed",
-                //     visibility: "hidden",
-                //     width: "auto",
-                //     overflow: "visible",
-                //     top: "-9999px",
-                //     fontSize: computed,
-                // });
-
-                // // clone.ref = null;
-
-                // document.body.appendChild(clone);
-                // const isOverflowing = clone.scrollWidth > el.clientWidth - 50;
-                // document.body.removeChild(clone);
-
                 clearTimeout(timeout!);
                 timeout = setTimeout(() => {
                     const isOverflowing =
                         measure.scrollWidth > el.clientWidth - 50;
-
-                    // console.log(words[i] + " " + measure.scrollWidth);
-                    // console.log(words[i] + " " + el.clientWidth);
-                    // console.log(
-                    //     isWordOverflowing.map((_, j) =>
-                    //         j === i ? isOverflowing : isWordOverflowing[j],
-                    //     ),
-                    // );
 
                     if (isWordOverflowingRef.current[i] !== isOverflowing) {
                         isWordOverflowingRef.current[i] = isOverflowing;
@@ -427,12 +283,9 @@ export default function LevelPage({
                 }, 50);
             };
 
-            // console.log(i);
             const observer = new ResizeObserver(() => check(i));
             observer.observe(el);
             check(i);
-
-            // observerRefs.current[i] = observer;
 
             return () => {
                 observer.disconnect();
@@ -455,60 +308,16 @@ export default function LevelPage({
                     Math.floor(Math.random() * dropSounds.length)
                 ].play();
             }}
-            // onCollision={(event) => {
-            //     // console.log(event.collisions);
-            //     if (
-            //         event.collisions
-            //             .slice(1)
-            //             .find((c) => Number.isInteger(c.id))
-            //     ) {
-            //         pickupSounds[
-            //             Math.floor(Math.random() * pickupSounds.length)
-            //         ].play();
-            //     }
-            // }}
             onDragOver={(event) => {
                 setItems((items) => move(items, event));
-
-                // console.log(event.operation.target);
-                // if (isSortable(event.operation.source)) {
-                //     if (event.operation.source.group) {
-                //         pickupSounds[
-                //             Math.floor(Math.random() * pickupSounds.length)
-                //         ].play();
-                //     }
-                // }
             }}
         >
-            {/* <div>{isWordOverflowing ? "Overflow" : "Not overflow"}</div> */}
             <main className="min-h-0 grid grid-cols-2 lg:max-2xl:grid-cols-[2fr_1fr] grid-rows-[1fr_auto] gap-4 lg:gap-12 bg-background p-4 lg:p-12 sm:items-start">
-                {/* <div className="h-1/2 w-full flex items-center justify-center"> */}
                 <motion.div
-                    // ref={timelineRef}
                     layout
                     className="col-start-1 col-end-2 row-start-2 row-end-3 lg:row-start-1 lg:row-end-2 flex flex-col lg:flex-row gap-4 h-full min-h-0 overflow-auto bg-secondary rounded-4xl"
                     onClick={(event) => {
-                        if (
-                            // event.target === event.currentTarget &&
-                            viewedRuleIndex !== null
-                        ) {
-                            // console.log("test");
-                            // setWords(
-                            //     applyRules(
-                            //         items.solution.map((x) => x.rule),
-                            //         initialWord,
-                            //     ),
-                            // );
-
-                            // setWords(
-                            //     words.map((w, i) =>
-                            //         applyRules(
-                            //             items.solution.map((x) => x.rule),
-                            //             level.words[i].initialWord,
-                            //         ),
-                            //     ),
-                            // );
-
+                        if (viewedRuleIndex !== null) {
                             setViewedRuleIndex(null);
                         }
                     }}
@@ -533,55 +342,6 @@ export default function LevelPage({
                             <RotateCcwIcon />
                         </Button>
                     </div>
-                    {/* <div
-                        className="size-full grid grid-rows-5 gap-4 p-4"
-                        style={{
-                            gridTemplateColumns: `repeat(${Math.ceil(
-                                level.rules.length / 5,
-                            )}, 1fr)`,
-                        }}
-                    >
-                        {rules.map(
-                            (rule, i) => (
-                                <div
-                                    key={rule.id}
-                                    className="grid grid-rows-1 grid-cols-1"
-                                    style={{
-                                        gridRowStart: (i % 5) + 1,
-                                        gridColumnStart: i / 5 + 1,
-                                    }}
-                                >
-                                    <Slot index={i} />
-                                    {items.solution[i] !== null && (
-                                        <SortableButton
-                                            // ref={i === 0 ? ruleButtonRef : undefined}
-                                            // key={items.solution[i].id}
-                                            id={items.solution[i].id}
-                                            index={
-                                                items.solution
-                                                    .slice(0, i)
-                                                    .filter(
-                                                        (rule) => rule !== null,
-                                                    ).length
-                                            }
-                                            group="solution"
-                                            className="row-start-1 col-start-1 size-full p-2 md:p-4 lg:p-6 text-lg select-none"
-                                            // style={{
-                                            //     gridRowStart: (i % 5) + 1,
-                                            //     gridColumnStart: i / 5 + 1,
-                                            // }}
-                                        >
-                                            {formatRule(items.solution[i].rule)}
-                                        </SortableButton>
-                                    )}
-                                </div>
-                            ),
-                            // : (
-                            //     <Slot index={i} key={`slot-${rule.id}`} />
-                            // ),
-                        )}
-                    </div> */}
-
                     <Column
                         id="solution"
                         className="lg:h-full w-full h-[50svh] flex flex-col gap-1 xl:gap-4 p-4 items-center lg:place-items-center lg:grid lg:grid-rows-5 lg:grid-flow-col overflow-auto"
@@ -593,7 +353,6 @@ export default function LevelPage({
                     >
                         {items.solution.map((rule, i) => (
                             <SortableButton
-                                // ref={i === 0 ? ruleButtonRef : undefined}
                                 key={rule.id}
                                 id={rule.id}
                                 index={i}
@@ -602,40 +361,10 @@ export default function LevelPage({
                                 onClick={(event) => {
                                     event.stopPropagation();
 
-                                    // setWords(
-                                    //     viewedRuleIndex === i
-                                    //         ? words.map((w, j) =>
-                                    //               applyRules(
-                                    //                   items.solution.map(
-                                    //                       (x) => x.rule,
-                                    //                   ),
-                                    //                   level.words[j]
-                                    //                       .initialWord,
-                                    //               ),
-                                    //           )
-                                    //         : words.map((w, j) =>
-                                    //               applyRules(
-                                    //                   items.solution
-                                    //                       .slice(0, i + 1)
-                                    //                       .map(
-                                    //                           (rule) =>
-                                    //                               rule.rule,
-                                    //                       ),
-                                    //                   level.words[j]
-                                    //                       .initialWord,
-                                    //               ),
-                                    //           ),
-                                    // );
-
                                     setViewedRuleIndex(
                                         viewedRuleIndex === i ? null : i,
                                     );
                                 }}
-                                // className="size-fit p-2 md:p-4 lg:p-6 text-base lg:text-lg select-none"
-                                // style={{
-                                //     gridRowStart: (i % 5) + 1,
-                                //     gridColumnStart: i / 5 + 1,
-                                // }}
                             >
                                 {formatRule(rule.rule)}
                             </SortableButton>
@@ -699,7 +428,6 @@ export default function LevelPage({
                         </HybridTooltip>
                     )}
                 </motion.div>
-                {/* </div> */}
                 <motion.div
                     layout
                     className="col-start-2 lg:col-start-1 col-end-3 row-start-2 row-end-3 flex flex-col gap-4 h-full bg-secondary rounded-4xl min-h-50 overflow-auto"
@@ -734,7 +462,6 @@ export default function LevelPage({
                     >
                         {items.bank.map((rule, i) => (
                             <SortableButton
-                                // ref={i === 0 ? ruleButtonRef : undefined}
                                 key={rule.id}
                                 id={rule.id}
                                 index={i}
@@ -754,14 +481,6 @@ export default function LevelPage({
                         ))}
                     </Column>
                 </motion.div>
-                {/* {completed && (
-                    <Button
-                        className="ml-auto bg-blue-500 w-20 h-12"
-                        onClick={() => (location.href = `/${levelNum + 1}`)}
-                    >
-                        Next
-                    </Button>
-                )} */}
             </main>
         </DragDropProvider>
     );

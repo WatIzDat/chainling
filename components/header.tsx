@@ -30,18 +30,8 @@ export default function Header({
                         {levelNum}
                     </h1>
                     <p className="text-center">{level.name}</p>
-                    {/* <p>
-                        <span className="font-bold">Goal:</span>{" "}
-                        {level.initialWord} → {level.targetWord}
-                    </p> */}
                 </header>
                 <div className="flex flex-row-reverse gap-4 text-lg">
-                    {/* // <Button
-                        //     className="bg-blue-500"
-                        //     onClick={() => (location.href = `/${levelNum + 1}`)}
-                        // >
-                        //     Next
-                        // </Button> */}
                     {levelNumInt !== null && (
                         <Link
                             className={`text-3xl px-2 pt-2 lg:pb-2 ${levelCompleted ? "block lg:visible" : "hidden lg:invisible"}`}
