@@ -19,5 +19,5 @@ export default async function Page({
 
     const level: Level = await response.json();
 
-    return <LevelLayout level={level} levelNum={levelNum} />;
+    return <LevelLayout editor={false} level={level} levelNum={levelNum} />;
 }

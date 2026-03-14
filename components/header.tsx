@@ -7,11 +7,11 @@ import { isNumeric } from "@/lib/utils";
 
 export default function Header({
     levelNum,
-    level,
+    levelName,
     levelCompleted,
 }: {
     levelNum: string;
-    level: Level;
+    levelName: string;
     levelCompleted: boolean;
 }) {
     const levelNumInt = isNumeric(levelNum) ? Number.parseInt(levelNum) : null;
@@ -29,7 +29,7 @@ export default function Header({
                         {levelNumInt === null ? "" : "Level "}
                         {levelNum}
                     </h1>
-                    <p className="text-center">{level.name}</p>
+                    <p className="text-center">{levelName}</p>
                 </header>
                 <div className="flex flex-row-reverse gap-4 text-lg">
                     {levelNumInt !== null && (

@@ -113,15 +113,30 @@ function Column({
 }
 
 export default function LevelPage({
+    editor,
     level,
     levelNum,
     setCompleted,
-}: {
-    level: Level;
-    levelNum: string;
-    setCompleted: Dispatch<SetStateAction<boolean>>;
-}) {
-    const rules = level.rules.map((rule, i) => ({ id: i, rule }));
+}:
+    | {
+          editor: false;
+          level: Level;
+          levelNum: string;
+          setCompleted: Dispatch<SetStateAction<boolean>>;
+      }
+    | {
+          editor: true;
+          level?: undefined;
+          levelNum?: undefined;
+          setCompleted?: undefined;
+      }) {
+    // if (editor) {
+    //     const [createdLevel, setCreatedLevel] = useState();
+    // }
+
+    const [rules, setRules] = editor
+        ? useState<{ id: number; rule: Rule }[]>([])
+        : [level.rules.map((rule, i) => ({ id: i, rule })), null];
 
     const [items, setItems] = useState<{
         bank: { id: number; rule: Rule }[];
@@ -131,7 +146,74 @@ export default function LevelPage({
         solution: [],
     });
 
-    const [words, setWords] = useState(level.words.map((w) => w.initialWord));
+    if (editor) {
+        const prevRules = usePrevious(rules);
+
+        useEffect(() => {
+            const addedRules = rules.filter(
+                (rule) => !prevRules?.map((r) => r.id).includes(rule.id),
+            );
+            const removedRules = prevRules?.filter(
+                (rule) => !rules.map((r) => r.id).includes(rule.id),
+            );
+
+            setItems({
+                bank: [
+                    ...items.bank.filter(
+                        (rule) =>
+                            !removedRules?.map((r) => r.id).includes(rule.id),
+                    ),
+                    ...addedRules,
+                ],
+                solution: [
+                    ...items.solution.filter(
+                        (rule) =>
+                            !removedRules?.map((r) => r.id).includes(rule.id),
+                    ),
+                    ...addedRules,
+                ],
+            });
+        }, [rules]);
+    }
+
+    const [wordConfigs, setWordConfigs] = editor
+        ? useState<{ initialWord: string; targetWord: string }[]>([])
+        : [level.words, null];
+
+    const [words, setWords] = useState(wordConfigs.map((w) => w.initialWord));
+
+    if (editor) {
+        useEffect(() => {
+            setWords(wordConfigs.map((w) => w.initialWord));
+
+            wordRefs.current = [...Array(wordConfigs.length)].map((_) => null);
+            measureRefs.current = [...Array(wordConfigs.length)].map(
+                (_) => null,
+            );
+
+            isWordOverflowingRef.current = [...Array(wordConfigs.length)].map(
+                (_) => false,
+            );
+            setIsWordOverflowing(
+                [...Array(wordConfigs.length)].map((_) => false),
+            );
+
+            // wordRefs = [...Array(wordConfigs.length)].map((_) =>
+            //     useRef<HTMLDivElement>(null),
+            // );
+
+            // measureRefs = [...Array(wordConfigs.length)].map((_) =>
+            //     useRef<HTMLDivElement>(null),
+            // );
+
+            // isWordOverflowingRef = useRef(
+            //     [...Array(wordConfigs.length)].map((_) => false),
+            // );
+            // [isWordOverflowing, setIsWordOverflowing] = useState(
+            //     [...Array(wordConfigs.length)].map((_) => false),
+            // );
+        }, [wordConfigs]);
+    }
 
     const [affectedIndices, setAffectedIndices] = useState<number[][]>([]);
 
@@ -160,105 +242,123 @@ export default function LevelPage({
 
     const prevItems = usePrevious(items);
 
-    const levelNumInt = isNumeric(levelNum) ? Number.parseInt(levelNum) : null;
+    const levelNumInt = editor
+        ? null
+        : isNumeric(levelNum)
+          ? Number.parseInt(levelNum)
+          : null;
 
-    useEffect(() => {
-        setTimelineHeaderVisible(items.solution.length <= 0);
+    useEffect(
+        () => {
+            setTimelineHeaderVisible(items.solution.length <= 0);
 
-        const newWords =
-            viewedRuleIndex === null
-                ? words.map((w, i) =>
-                      applyRules(
-                          items.solution.map((x) => x.rule),
-                          level.words[i].initialWord,
-                      ),
-                  )
-                : words.map((w, i) =>
-                      applyRules(
-                          items.solution
-                              .slice(0, viewedRuleIndex + 1)
-                              .map((x) => x.rule),
-                          level.words[i].initialWord,
-                      ),
-                  );
+            const newWords =
+                viewedRuleIndex === null
+                    ? words.map((w, i) =>
+                          applyRules(
+                              items.solution.map((x) => x.rule),
+                              wordConfigs[i].initialWord,
+                          ),
+                      )
+                    : words.map((w, i) =>
+                          applyRules(
+                              items.solution
+                                  .slice(0, viewedRuleIndex + 1)
+                                  .map((x) => x.rule),
+                              wordConfigs[i].initialWord,
+                          ),
+                      );
 
-        setWords(newWords);
+            setWords(newWords);
 
-        if (!isEqual(items, prevItems)) {
-            swapSound.play();
-        }
-
-        let allEqual = true;
-
-        for (let i = 0; i < newWords.length; i++) {
-            if (newWords[i] !== level.words[i].targetWord) {
-                allEqual = false;
-
-                break;
-            }
-        }
-
-        if (allEqual) {
-            if (timeoutRef.current !== null) {
-                clearTimeout(timeoutRef.current);
+            if (!isEqual(items, prevItems)) {
+                swapSound.play();
             }
 
-            timeoutRef.current = setTimeout(() => {
-                setSuccess(true);
+            let allEqual = true;
 
-                setCompleted(true);
+            for (let i = 0; i < newWords.length; i++) {
+                if (newWords[i] !== wordConfigs[i].targetWord) {
+                    allEqual = false;
 
-                if (isFirstSuccessRef.current) {
-                    successSound.play();
+                    break;
+                }
+            }
+
+            if (allEqual) {
+                if (timeoutRef.current !== null) {
+                    clearTimeout(timeoutRef.current);
                 }
 
-                isFirstSuccessRef.current = false;
+                timeoutRef.current = setTimeout(() => {
+                    setSuccess(true);
 
-                if (levelNumInt !== null) {
-                    if (levelNumInt === NUM_LEVELS) {
-                        localStorage.removeItem("level");
-                    } else {
-                        localStorage.setItem(
-                            "level",
-                            (levelNumInt + 1).toString(),
-                        );
+                    if (!editor) {
+                        setCompleted(true);
                     }
+
+                    if (isFirstSuccessRef.current) {
+                        successSound.play();
+                    }
+
+                    isFirstSuccessRef.current = false;
+
+                    if (levelNumInt !== null) {
+                        if (levelNumInt === NUM_LEVELS) {
+                            localStorage.removeItem("level");
+                        } else {
+                            localStorage.setItem(
+                                "level",
+                                (levelNumInt + 1).toString(),
+                            );
+                        }
+                    }
+                }, 1000);
+            } else {
+                setSuccess(false);
+
+                if (timeoutRef.current !== null) {
+                    clearTimeout(timeoutRef.current);
+
+                    timeoutRef.current = null;
                 }
-            }, 1000);
-        } else {
-            setSuccess(false);
-
-            if (timeoutRef.current !== null) {
-                clearTimeout(timeoutRef.current);
-
-                timeoutRef.current = null;
             }
-        }
 
-        return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-    }, [items, viewedRuleIndex]);
-
-    const wordRefs = [...Array(level.words.length)].map((_) =>
-        useRef<HTMLDivElement>(null),
+            return () => {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current);
+            };
+        },
+        editor
+            ? [items, viewedRuleIndex, wordConfigs]
+            : [items, viewedRuleIndex],
     );
 
-    const measureRefs = [...Array(level.words.length)].map((_) =>
-        useRef<HTMLDivElement>(null),
+    const wordRefs = useRef<Array<HTMLDivElement | null>>(
+        [...Array(wordConfigs.length)].map((_) => null),
     );
+    const measureRefs = useRef<Array<HTMLDivElement | null>>(
+        [...Array(wordConfigs.length)].map((_) => null),
+    );
+
+    // let wordRefs = [...Array(wordConfigs.length)].map((_) =>
+    //     useRef<HTMLDivElement>(null),
+    // );
+
+    // let measureRefs = [...Array(wordConfigs.length)].map((_) =>
+    //     useRef<HTMLDivElement>(null),
+    // );
 
     const isWordOverflowingRef = useRef(
-        [...Array(level.words.length)].map((_) => false),
+        [...Array(wordConfigs.length)].map((_) => false),
     );
     const [isWordOverflowing, setIsWordOverflowing] = useState(
-        [...Array(level.words.length)].map((_) => false),
+        [...Array(wordConfigs.length)].map((_) => false),
     );
 
     useEffect(() => {
-        const cleanup = wordRefs.map((ref, i) => {
-            const el = ref.current;
-            const measure = measureRefs[i].current;
+        const cleanup = wordRefs.current.map((ref, i) => {
+            const el = ref;
+            const measure = measureRefs.current[i];
 
             if (!el || !measure) {
                 return () => {};
@@ -347,7 +447,7 @@ export default function LevelPage({
                         className="lg:h-full w-full h-[50svh] flex flex-col gap-1 xl:gap-4 p-4 items-center lg:place-items-center lg:grid lg:grid-rows-5 lg:grid-flow-col overflow-auto"
                         style={{
                             gridTemplateColumns: `repeat(${Math.ceil(
-                                level.rules.length / 5,
+                                rules.length / 5,
                             )}, 1fr)`,
                         }}
                     >
@@ -382,14 +482,16 @@ export default function LevelPage({
                                 wordIndex={wordIndex}
                                 refs={wordRefs}
                                 affectedIndices={affectedIndices}
-                                level={level}
+                                // level={level}
+                                wordConfigs={wordConfigs}
                             />
                             <Word
                                 word={word}
                                 wordIndex={wordIndex}
                                 refs={measureRefs}
                                 affectedIndices={affectedIndices}
-                                level={level}
+                                // level={level}
+                                wordConfigs={wordConfigs}
                                 measure
                             />
                         </Fragment>

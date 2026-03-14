@@ -6,20 +6,24 @@ export default function Word({
     wordIndex,
     refs,
     affectedIndices,
-    level,
+    // level,
+    wordConfigs,
     measure,
 }: {
     word: string;
     wordIndex: number;
-    refs: RefObject<HTMLDivElement | null>[];
+    refs: RefObject<Array<HTMLDivElement | null>>;
     affectedIndices: number[][];
-    level: Level;
+    // level: Level;
+    wordConfigs: { initialWord: string; targetWord: string }[];
     measure?: boolean;
 }) {
     return (
         <div
             key={wordIndex}
-            ref={measure ? refs[wordIndex] : refs[wordIndex]}
+            ref={(el) => {
+                refs.current[wordIndex] = el;
+            }}
             className={`flex flex-col gap-4 items-center justify-center ${measure ? "fixed invisible w-auto" : "w-1/2 h-1/2"}`}
         >
             <div className="text-center">
@@ -38,8 +42,8 @@ export default function Word({
             </div>
             <div className="text-lg font-normal text-center">
                 <span className="font-bold">Goal:</span>{" "}
-                {level.words[wordIndex].initialWord} →{" "}
-                {level.words[wordIndex].targetWord}
+                {wordConfigs[wordIndex].initialWord} →{" "}
+                {wordConfigs[wordIndex].targetWord}
             </div>
         </div>
     );
