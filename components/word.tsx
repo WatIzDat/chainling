@@ -20,7 +20,7 @@ export default function Word({
 }) {
     return (
         <div
-            key={wordIndex}
+            // key={wordIndex}
             ref={(el) => {
                 refs.current[wordIndex] = el;
             }}

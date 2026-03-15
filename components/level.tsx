@@ -191,14 +191,37 @@ export default function LevelPage({
     }
 
     const [wordConfigs, setWordConfigs] = editor
-        ? useState<{ initialWord: string; targetWord: string }[]>([])
-        : [level.words, null];
+        ? useState<{ id: number; initialWord: string; targetWord: string }[]>(
+              [],
+          )
+        : [
+              level.words.map((w, i) => ({
+                  id: i,
+                  initialWord: w.initialWord,
+                  targetWord: w.targetWord,
+              })),
+              null,
+          ];
 
-    const [words, setWords] = useState(wordConfigs.map((w) => w.initialWord));
+    const [words, setWords] = useState<{ id: number; word: string }[]>(
+        wordConfigs.map((w, i) => ({ id: i, word: w.initialWord })),
+    );
+
+    const maxWordIdRef = editor ? useRef(0) : null;
 
     if (editor) {
         useEffect(() => {
-            setWords(wordConfigs.map((w) => w.initialWord));
+            setWords(
+                wordConfigs.map((w) => ({
+                    id: w.id,
+                    word: w.initialWord,
+                })),
+            );
+
+            maxWordIdRef!.current =
+                max(wordConfigs.map((w) => w.id)) ?? maxWordIdRef!.current;
+
+            console.log(words);
 
             wordRefs.current = [...Array(wordConfigs.length)].map((_) => null);
             measureRefs.current = [...Array(wordConfigs.length)].map(
@@ -266,22 +289,29 @@ export default function LevelPage({
         () => {
             setTimelineHeaderVisible(items.solution.length <= 0);
 
-            const newWords =
+            let newWords = wordConfigs.map((w) => ({
+                id: w.id,
+                word: w.initialWord,
+            }));
+
+            newWords =
                 viewedRuleIndex === null
-                    ? words.map((w, i) =>
-                          applyRules(
+                    ? newWords.map((w, i) => ({
+                          id: w.id,
+                          word: applyRules(
                               items.solution.map((x) => x.rule),
                               wordConfigs[i].initialWord,
                           ),
-                      )
-                    : words.map((w, i) =>
-                          applyRules(
+                      }))
+                    : newWords.map((w, i) => ({
+                          id: w.id,
+                          word: applyRules(
                               items.solution
                                   .slice(0, viewedRuleIndex + 1)
                                   .map((x) => x.rule),
                               wordConfigs[i].initialWord,
                           ),
-                      );
+                      }));
 
             setWords(newWords);
 
@@ -292,7 +322,7 @@ export default function LevelPage({
             let allEqual = true;
 
             for (let i = 0; i < newWords.length; i++) {
-                if (newWords[i] !== wordConfigs[i].targetWord) {
+                if (newWords[i].word !== wordConfigs[i].targetWord) {
                     allEqual = false;
 
                     break;
@@ -490,9 +520,9 @@ export default function LevelPage({
                     className={`relative transition-colors col-start-1 col-end-3 row-start-1 row-end-2 lg:col-start-2 flex lg:max-2xl:flex-col lg:max-2xl:flex-nowrap ${isWordOverflowing.includes(true) ? "flex-col flex-nowrap" : "flex-wrap"} ${words.length === 2 && "flex-col"} h-full items-center justify-center text-5xl ${words.length === 2 && "lg:text-7xl"} ${words.length > 2 ? "2xl:text-9xl" : "lg:text-9xl"} font-bold ${success && "text-green-500"}`}
                 >
                     {words.map((word, wordIndex) => (
-                        <Fragment key={wordIndex}>
+                        <Fragment key={word.id}>
                             <Word
-                                word={word}
+                                word={word.word}
                                 wordIndex={wordIndex}
                                 refs={wordRefs}
                                 affectedIndices={affectedIndices}
@@ -500,7 +530,7 @@ export default function LevelPage({
                                 wordConfigs={wordConfigs}
                             />
                             <Word
-                                word={word}
+                                word={word.word}
                                 wordIndex={wordIndex}
                                 refs={measureRefs}
                                 affectedIndices={affectedIndices}
@@ -510,6 +540,68 @@ export default function LevelPage({
                             />
                         </Fragment>
                     ))}
+                    {editor && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost">
+                                    <PlusIcon />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent side="left">
+                                <PopoverHeader>add word</PopoverHeader>
+                                <Form
+                                    action={(e) => {
+                                        console.log(e);
+
+                                        setWordConfigs!([
+                                            ...wordConfigs,
+                                            {
+                                                id: maxWordIdRef!.current + 1,
+                                                initialWord:
+                                                    e
+                                                        .get("initialWord")
+                                                        ?.toString() ?? "",
+                                                targetWord:
+                                                    e
+                                                        .get("targetWord")
+                                                        ?.toString() ?? "",
+                                            },
+                                        ]);
+                                    }}
+                                >
+                                    <FieldGroup className="gap-4">
+                                        <Field orientation="horizontal">
+                                            <FieldLabel
+                                                htmlFor="initialWord"
+                                                className="w-1/2"
+                                            >
+                                                initial word
+                                            </FieldLabel>
+                                            <Input
+                                                id="initialWord"
+                                                name="initialWord"
+                                            />
+                                        </Field>
+                                        <Field orientation="horizontal">
+                                            <FieldLabel
+                                                htmlFor="targetWord"
+                                                className="w-1/2"
+                                            >
+                                                target word
+                                            </FieldLabel>
+                                            <Input
+                                                id="targetWord"
+                                                name="targetWord"
+                                            />
+                                        </Field>
+                                        <Field>
+                                            <Button type="submit">add</Button>
+                                        </Field>
+                                    </FieldGroup>
+                                </Form>
+                            </PopoverContent>
+                        </Popover>
+                    )}
                     <Button
                         className="ml-6 mb-6 2xl:hidden absolute top-0 right-0"
                         size="icon"
@@ -687,7 +779,8 @@ export default function LevelPage({
                                 onHover={() =>
                                     setAffectedIndices(
                                         words.map(
-                                            (w) => applyRule(rule.rule, w)[1],
+                                            (w) =>
+                                                applyRule(rule.rule, w.word)[1],
                                         ),
                                     )
                                 }
