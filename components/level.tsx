@@ -189,17 +189,25 @@ export default function LevelPage({
 
             setItems({
                 bank: [
-                    ...items.bank.filter(
-                        (rule) =>
-                            !removedRules?.map((r) => r.id).includes(rule.id),
-                    ),
+                    ...items.bank
+                        .filter(
+                            (rule) =>
+                                !removedRules
+                                    ?.map((r) => r.id)
+                                    .includes(rule.id),
+                        )
+                        .map((rule) => rules.find((r) => r.id === rule.id)!),
                     ...addedRules,
                 ],
                 solution: [
-                    ...items.solution.filter(
-                        (rule) =>
-                            !removedRules?.map((r) => r.id).includes(rule.id),
-                    ),
+                    ...items.solution
+                        .filter(
+                            (rule) =>
+                                !removedRules
+                                    ?.map((r) => r.id)
+                                    .includes(rule.id),
+                        )
+                        .map((rule) => rules.find((r) => r.id === rule.id)!),
                     // ...addedRules,
                 ],
             });
@@ -514,22 +522,59 @@ export default function LevelPage({
                         }}
                     >
                         {items.solution.map((rule, i) => (
-                            <SortableButton
+                            <RulePopover
                                 key={rule.id}
-                                sortableId={rule.id}
-                                index={i}
-                                group="solution"
-                                className={`h-fit lg:h-full w-full text-xs md:text-sm md:p-4 lg:text-base xl:text-xl select-none ${viewedRuleIndex !== null && i <= viewedRuleIndex ? "bg-muted-foreground" : ""} ${viewedRuleIndex !== null && i === viewedRuleIndex ? "border-white border-4" : ""}`}
-                                onClick={(event) => {
-                                    event.stopPropagation();
+                                type="edit"
+                                side="right"
+                                customTrigger={(onClick) => (
+                                    <SortableButton
+                                        // key={rule.id}
+                                        sortableId={rule.id}
+                                        index={i}
+                                        group="solution"
+                                        className={`h-fit lg:h-full w-full text-xs md:text-sm md:p-4 lg:text-base xl:text-xl select-none ${viewedRuleIndex !== null && i <= viewedRuleIndex ? "bg-muted-foreground" : ""} ${viewedRuleIndex !== null && i === viewedRuleIndex ? "border-white border-4" : ""}`}
+                                        onClick={(event) => {
+                                            event.stopPropagation();
 
-                                    setViewedRuleIndex(
-                                        viewedRuleIndex === i ? null : i,
-                                    );
-                                }}
-                            >
-                                {formatRule(rule.rule)}
-                            </SortableButton>
+                                            setViewedRuleIndex(
+                                                viewedRuleIndex === i
+                                                    ? null
+                                                    : i,
+                                            );
+
+                                            onClick(event);
+                                        }}
+                                    >
+                                        {formatRule(rule.rule)}
+                                    </SortableButton>
+                                )}
+                                onSubmit={(
+                                    pattern,
+                                    replacement,
+                                    environmentBefore,
+                                    environmentAfter,
+                                ) =>
+                                    setRules!(
+                                        rules.map((r) =>
+                                            r.id === rule.id
+                                                ? {
+                                                      ...rule,
+                                                      rule: {
+                                                          pattern: pattern,
+                                                          replacement:
+                                                              replacement,
+                                                          environment:
+                                                              environmentBefore ||
+                                                              environmentAfter
+                                                                  ? `${environmentBefore} _ ${environmentAfter}`
+                                                                  : null,
+                                                      },
+                                                  }
+                                                : r,
+                                        ),
+                                    )
+                                }
+                            />
                         ))}
                     </Column>
                 </motion.div>
@@ -672,6 +717,8 @@ export default function LevelPage({
                                     <Edit2Icon />
                                 </Button>
                                 <RulePopover
+                                    type="add"
+                                    side="left"
                                     onSubmit={(
                                         pattern,
                                         replacement,
@@ -729,16 +776,18 @@ export default function LevelPage({
                         id="bank"
                         className="h-full w-full flex flex-col lg:flex-row flex-nowrap lg:flex-wrap overflow-auto gap-1 md:gap-2 lg:gap-4 p-4 items-center lg:justify-center"
                     >
-                        {items.bank.map((rule, i) =>
-                            editMode ? (
+                        {items.bank.map(
+                            (rule, i) => (
                                 <RulePopover
                                     key={rule.id}
+                                    type="edit"
+                                    side="top"
                                     customTrigger={(onClick) => (
                                         <SortableButton
                                             sortableId={rule.id}
                                             index={i}
                                             group="bank"
-                                            className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none bg-blue-500"
+                                            className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none"
                                             onClick={onClick}
                                             onPointerOver={() =>
                                                 setAffectedIndices(
@@ -768,7 +817,7 @@ export default function LevelPage({
                                             rules.map((r) =>
                                                 r.id === rule.id
                                                     ? {
-                                                          id: rule.id,
+                                                          ...rule,
                                                           rule: {
                                                               pattern: pattern,
                                                               replacement:
@@ -785,31 +834,33 @@ export default function LevelPage({
                                         )
                                     }
                                 />
-                            ) : (
-                                <SortableButton
-                                    key={rule.id}
-                                    sortableId={rule.id}
-                                    index={i}
-                                    group="bank"
-                                    className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none"
-                                    onPointerOver={() =>
-                                        setAffectedIndices(
-                                            words.map(
-                                                (w) =>
-                                                    applyRule(
-                                                        rule.rule,
-                                                        w.word,
-                                                    )[1],
-                                            ),
-                                        )
-                                    }
-                                    onPointerLeave={() =>
-                                        setAffectedIndices([])
-                                    }
-                                >
-                                    {formatRule(rule.rule)}
-                                </SortableButton>
                             ),
+                            // )
+                            // : (
+                            //     <SortableButton
+                            //         key={rule.id}
+                            //         sortableId={rule.id}
+                            //         index={i}
+                            //         group="bank"
+                            //         className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none"
+                            //         onPointerOver={() =>
+                            //             setAffectedIndices(
+                            //                 words.map(
+                            //                     (w) =>
+                            //                         applyRule(
+                            //                             rule.rule,
+                            //                             w.word,
+                            //                         )[1],
+                            //                 ),
+                            //             )
+                            //         }
+                            //         onPointerLeave={() =>
+                            //             setAffectedIndices([])
+                            //         }
+                            //     >
+                            //         {formatRule(rule.rule)}
+                            //     </SortableButton>
+                            // ),
                         )}
                     </Column>
                 </motion.div>

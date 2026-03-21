@@ -14,25 +14,45 @@ import { Input } from "./ui/input";
 import { MouseEventHandler, useState } from "react";
 
 export default function RulePopover({
+    type,
     children,
     customTrigger,
     onSubmit,
-}: {
-    children?: React.ReactElement;
-    customTrigger?: (
-        onClick: MouseEventHandler<HTMLButtonElement>,
-    ) => React.ReactElement;
-    onSubmit: (
-        pattern: string,
-        replacement: string,
-        environmentBefore: string,
-        environmentAfter: string,
-    ) => any;
-}) {
+    side,
+}:
+    | {
+          type: "add";
+          children: React.ReactElement;
+          // customTrigger?: (
+          //     onClick: MouseEventHandler<HTMLButtonElement>,
+          // ) => React.ReactElement;
+          customTrigger?: undefined;
+          onSubmit: (
+              pattern: string,
+              replacement: string,
+              environmentBefore: string,
+              environmentAfter: string,
+          ) => any;
+          side?: "left" | "top" | "right" | "bottom";
+      }
+    | {
+          type: "edit";
+          children?: undefined;
+          customTrigger: (
+              onClick: MouseEventHandler<HTMLButtonElement>,
+          ) => React.ReactElement;
+          onSubmit: (
+              pattern: string,
+              replacement: string,
+              environmentBefore: string,
+              environmentAfter: string,
+          ) => any;
+          side?: "left" | "top" | "right" | "bottom";
+      }) {
     const [open, setOpen] = useState(false);
 
     const newCustomTrigger =
-        customTrigger &&
+        type === "edit" &&
         customTrigger(() => {
             console.log("clicked");
             setOpen((open) => !open);
@@ -40,16 +60,16 @@ export default function RulePopover({
 
     return (
         <Popover
-            open={customTrigger ? open : undefined}
-            onOpenChange={customTrigger ? setOpen : undefined}
+            open={type === "edit" ? open : undefined}
+            onOpenChange={type === "edit" ? setOpen : undefined}
         >
             {/* {children && ( */}
             <PopoverTrigger asChild>
                 {newCustomTrigger ? newCustomTrigger : children}
             </PopoverTrigger>
             {/* )} */}
-            <PopoverContent side="left">
-                <PopoverHeader>add rule</PopoverHeader>
+            <PopoverContent side={side}>
+                <PopoverHeader>{type} rule</PopoverHeader>
                 <Form
                     action={(e) => {
                         console.log(e);
@@ -92,7 +112,7 @@ export default function RulePopover({
                             />
                         </Field>
                         <Field>
-                            <Button type="submit">add</Button>
+                            <Button type="submit">{type}</Button>
                         </Field>
                     </FieldGroup>
                 </Form>
