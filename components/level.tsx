@@ -15,13 +15,17 @@ import {
     Fragment,
     PointerEventHandler,
     MouseEventHandler,
+    ButtonHTMLAttributes,
+    ClassAttributes,
+    forwardRef,
+    useCallback,
 } from "react";
 import { Button } from "./ui/button";
 import { CollisionPriority } from "@dnd-kit/abstract";
 import { Level, NUM_LEVELS } from "@/lib/level";
 import { clearTimeout, setTimeout } from "timers";
 import { motion } from "motion/react";
-import { InfoIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import { Edit2Icon, InfoIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
 import { Howl, Howler } from "howler";
 import { isNumeric } from "@/lib/utils";
 import { isEqual, max } from "lodash-es";
@@ -41,50 +45,62 @@ import {
 import { Field, FieldGroup, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import Form from "next/form";
+import RulePopover from "./rule-popover";
 
-function SortableButton({
-    children,
-    id,
-    index,
-    group,
-    className,
-    style,
-    onHover,
-    onLeave,
-    onClick,
-}: {
-    children: React.ReactNode;
-    id: number;
-    index: number;
-    group: string;
-    className?: string;
-    style?: CSSProperties;
-    onHover?: PointerEventHandler<HTMLButtonElement>;
-    onLeave?: PointerEventHandler<HTMLButtonElement>;
-    onClick?: MouseEventHandler<HTMLButtonElement>;
-}) {
-    const { ref: sortableRef, isDragging } = useSortable({
-        id,
-        index,
-        type: "item",
-        accept: "item",
-        group,
-    });
+const SortableButton = forwardRef(
+    (
+        {
+            children,
+            sortableId,
+            index,
+            group,
+            className,
+            onClick,
+            ...props
+        }: {
+            children: React.ReactNode;
+            sortableId: number;
+            index: number;
+            group: string;
+            className?: string;
+            onClick?: MouseEventHandler<HTMLButtonElement>;
+        } & React.ComponentProps<"button">,
+        forwardedRef,
+    ) => {
+        const { ref: sortableRef, isDragging } = useSortable({
+            id: sortableId,
+            index,
+            type: "item",
+            accept: "item",
+            group,
+        });
 
-    return (
-        <Button
-            ref={sortableRef}
-            className={className}
-            style={style}
-            data-dragging={isDragging}
-            onPointerOver={onHover}
-            onPointerLeave={onLeave}
-            onClick={onClick}
-        >
-            {children}
-        </Button>
-    );
-}
+        const mergedRef = useCallback(
+            (node: Element | null) => {
+                sortableRef(node);
+
+                if (typeof forwardedRef === "function") {
+                    forwardedRef(node);
+                } else if (forwardedRef) {
+                    forwardedRef.current = node;
+                }
+            },
+            [forwardedRef],
+        );
+
+        return (
+            <Button
+                ref={mergedRef}
+                className={className}
+                data-dragging={isDragging}
+                onClick={onClick}
+                {...props}
+            >
+                {children}
+            </Button>
+        );
+    },
+);
 
 function Column({
     ref,
@@ -440,6 +456,8 @@ export default function LevelPage({
         return () => cleanup.forEach((c) => c());
     }, [words]);
 
+    const [editMode, setEditMode] = editor ? useState(false) : [null, null];
+
     return (
         <DragDropProvider
             onDragStart={(event) => {
@@ -498,7 +516,7 @@ export default function LevelPage({
                         {items.solution.map((rule, i) => (
                             <SortableButton
                                 key={rule.id}
-                                id={rule.id}
+                                sortableId={rule.id}
                                 index={i}
                                 group="solution"
                                 className={`h-fit lg:h-full w-full text-xs md:text-sm md:p-4 lg:text-base xl:text-xl select-none ${viewedRuleIndex !== null && i <= viewedRuleIndex ? "bg-muted-foreground" : ""} ${viewedRuleIndex !== null && i === viewedRuleIndex ? "border-white border-4" : ""}`}
@@ -645,104 +663,46 @@ export default function LevelPage({
                             Changes
                         </h2>
                         {editor ? (
-                            <Popover>
-                                <PopoverTrigger asChild>
+                            <div>
+                                <Button
+                                    variant="ghost"
+                                    className="max-md:hidden mr-6 mt-6"
+                                    onClick={() => setEditMode!(!editMode)}
+                                >
+                                    <Edit2Icon />
+                                </Button>
+                                <RulePopover
+                                    onSubmit={(
+                                        pattern,
+                                        replacement,
+                                        environmentBefore,
+                                        environmentAfter,
+                                    ) =>
+                                        setRules!([
+                                            ...rules,
+                                            {
+                                                id: maxRuleIdRef!.current + 1,
+                                                rule: {
+                                                    pattern: pattern,
+                                                    replacement: replacement,
+                                                    environment:
+                                                        environmentBefore ||
+                                                        environmentAfter
+                                                            ? `${environmentBefore} _ ${environmentAfter}`
+                                                            : null,
+                                                },
+                                            },
+                                        ])
+                                    }
+                                >
                                     <Button
                                         variant="ghost"
-                                        className="max-md:hidden mr-6 mt-6 ml-auto"
+                                        className="max-md:hidden mr-6 mt-6"
                                     >
                                         <PlusIcon />
                                     </Button>
-                                </PopoverTrigger>
-                                <PopoverContent side="left">
-                                    <PopoverHeader>add rule</PopoverHeader>
-                                    <Form
-                                        action={(e) => {
-                                            console.log(e);
-
-                                            const environmentBefore = e
-                                                .get("environmentBefore")
-                                                ?.toString();
-                                            const environmentAfter = e
-                                                .get("environmentAfter")
-                                                ?.toString();
-
-                                            setRules!([
-                                                ...rules,
-                                                {
-                                                    id:
-                                                        maxRuleIdRef!.current +
-                                                        1,
-                                                    rule: {
-                                                        pattern: e
-                                                            .get("pattern")
-                                                            ?.toString()!,
-                                                        replacement: e
-                                                            .get("replacement")
-                                                            ?.toString()!,
-                                                        environment:
-                                                            environmentBefore ||
-                                                            environmentAfter
-                                                                ? `${environmentBefore} _ ${environmentAfter}`
-                                                                : null,
-                                                    },
-                                                },
-                                            ]);
-                                        }}
-                                    >
-                                        <FieldGroup className="gap-4">
-                                            <Field orientation="horizontal">
-                                                <FieldLabel
-                                                    htmlFor="pattern"
-                                                    className="w-1/2"
-                                                >
-                                                    pattern
-                                                </FieldLabel>
-                                                <Input
-                                                    id="pattern"
-                                                    name="pattern"
-                                                />
-                                            </Field>
-                                            <Field orientation="horizontal">
-                                                <FieldLabel
-                                                    htmlFor="replacement"
-                                                    className="w-1/2"
-                                                >
-                                                    replacement
-                                                </FieldLabel>
-                                                <Input
-                                                    id="replacement"
-                                                    name="replacement"
-                                                />
-                                            </Field>
-                                            <Field orientation="horizontal">
-                                                <FieldLabel
-                                                    id="environment"
-                                                    className="w-1/2"
-                                                >
-                                                    environment
-                                                </FieldLabel>
-                                                <Input
-                                                    id="environmentBefore"
-                                                    name="environmentBefore"
-                                                    aria-labelledby="environment"
-                                                />
-                                                _
-                                                <Input
-                                                    id="environmentAfter"
-                                                    name="environmentAfter"
-                                                    aria-labelledby="environment"
-                                                />
-                                            </Field>
-                                            <Field>
-                                                <Button type="submit">
-                                                    add
-                                                </Button>
-                                            </Field>
-                                        </FieldGroup>
-                                    </Form>
-                                </PopoverContent>
-                            </Popover>
+                                </RulePopover>
+                            </div>
                         ) : (
                             (levelNumInt === null || levelNumInt >= 5) && (
                                 <HybridTooltip>
@@ -769,26 +729,88 @@ export default function LevelPage({
                         id="bank"
                         className="h-full w-full flex flex-col lg:flex-row flex-nowrap lg:flex-wrap overflow-auto gap-1 md:gap-2 lg:gap-4 p-4 items-center lg:justify-center"
                     >
-                        {items.bank.map((rule, i) => (
-                            <SortableButton
-                                key={rule.id}
-                                id={rule.id}
-                                index={i}
-                                group="bank"
-                                className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none"
-                                onHover={() =>
-                                    setAffectedIndices(
-                                        words.map(
-                                            (w) =>
-                                                applyRule(rule.rule, w.word)[1],
-                                        ),
-                                    )
-                                }
-                                onLeave={() => setAffectedIndices([])}
-                            >
-                                {formatRule(rule.rule)}
-                            </SortableButton>
-                        ))}
+                        {items.bank.map((rule, i) =>
+                            editMode ? (
+                                <RulePopover
+                                    key={rule.id}
+                                    customTrigger={(onClick) => (
+                                        <SortableButton
+                                            sortableId={rule.id}
+                                            index={i}
+                                            group="bank"
+                                            className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none bg-blue-500"
+                                            onClick={onClick}
+                                            onPointerOver={() =>
+                                                setAffectedIndices(
+                                                    words.map(
+                                                        (w) =>
+                                                            applyRule(
+                                                                rule.rule,
+                                                                w.word,
+                                                            )[1],
+                                                    ),
+                                                )
+                                            }
+                                            onPointerLeave={() =>
+                                                setAffectedIndices([])
+                                            }
+                                        >
+                                            {formatRule(rule.rule)}
+                                        </SortableButton>
+                                    )}
+                                    onSubmit={(
+                                        pattern,
+                                        replacement,
+                                        environmentBefore,
+                                        environmentAfter,
+                                    ) =>
+                                        setRules!(
+                                            rules.map((r) =>
+                                                r.id === rule.id
+                                                    ? {
+                                                          id: rule.id,
+                                                          rule: {
+                                                              pattern: pattern,
+                                                              replacement:
+                                                                  replacement,
+                                                              environment:
+                                                                  environmentBefore ||
+                                                                  environmentAfter
+                                                                      ? `${environmentBefore} _ ${environmentAfter}`
+                                                                      : null,
+                                                          },
+                                                      }
+                                                    : r,
+                                            ),
+                                        )
+                                    }
+                                />
+                            ) : (
+                                <SortableButton
+                                    key={rule.id}
+                                    sortableId={rule.id}
+                                    index={i}
+                                    group="bank"
+                                    className="w-full h-fit lg:size-fit md:p-4 lg:p-6 text-xs md:text-sm lg:text-base xl:text-lg select-none"
+                                    onPointerOver={() =>
+                                        setAffectedIndices(
+                                            words.map(
+                                                (w) =>
+                                                    applyRule(
+                                                        rule.rule,
+                                                        w.word,
+                                                    )[1],
+                                            ),
+                                        )
+                                    }
+                                    onPointerLeave={() =>
+                                        setAffectedIndices([])
+                                    }
+                                >
+                                    {formatRule(rule.rule)}
+                                </SortableButton>
+                            ),
+                        )}
                     </Column>
                 </motion.div>
             </main>
