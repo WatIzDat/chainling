@@ -162,7 +162,7 @@ export default function LevelPage({
       }
     | {
           editor: true;
-          level?: undefined;
+          level?: Level | undefined;
           levelNum?: undefined;
           setCompleted?: undefined;
           setVerified: Dispatch<SetStateAction<boolean>>;
@@ -171,6 +171,23 @@ export default function LevelPage({
     // if (editor) {
     //     const [createdLevel, setCreatedLevel] = useState();
     // }
+
+    if (editor) {
+        useEffect(() => {
+            if (!level) {
+                return;
+            }
+
+            setRules!(level.rules.map((rule, i) => ({ id: i, rule })));
+            setWordConfigs!(
+                level.words.map((w, i) => ({
+                    id: i,
+                    initialWord: w.initialWord,
+                    targetWord: w.targetWord,
+                })),
+            );
+        }, [level]);
+    }
 
     const [rules, setRules] = editor
         ? useState<{ id: number; rule: Rule }[]>([])

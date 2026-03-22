@@ -11,6 +11,10 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "./ui/dialog";
+import { Textarea } from "./ui/textarea";
+import Form from "next/form";
+import { Field } from "./ui/field";
+import { Dispatch, SetStateAction } from "react";
 
 export default function Header({
     editor,
@@ -19,6 +23,7 @@ export default function Header({
     levelCompleted,
     levelVerified,
     levelCode,
+    setLevel,
 }:
     | {
           editor: false;
@@ -27,6 +32,7 @@ export default function Header({
           levelCompleted: boolean;
           levelVerified?: undefined;
           levelCode?: undefined;
+          setLevel?: undefined;
       }
     | {
           editor: true;
@@ -35,6 +41,7 @@ export default function Header({
           levelCompleted?: undefined;
           levelVerified: boolean;
           levelCode: string;
+          setLevel: Dispatch<SetStateAction<Level | undefined>>;
       }) {
     const levelNumInt = isNumeric(levelNum) ? Number.parseInt(levelNum) : null;
 
@@ -55,21 +62,61 @@ export default function Header({
                 </header>
                 <div className="flex flex-row-reverse gap-4 text-lg">
                     {editor ? (
-                        <Dialog>
-                            <DialogTrigger
-                                className={`text-3xl px-2 pt-2 lg:pb-2 ${levelVerified ? "block lg:visible" : "hidden lg:invisible"}`}
-                            >
-                                export
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>export level</DialogTitle>
-                                </DialogHeader>
-                                <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono overflow-auto">
-                                    {levelCode}
-                                </code>
-                            </DialogContent>
-                        </Dialog>
+                        <>
+                            <Dialog>
+                                <DialogTrigger
+                                    className={`text-3xl px-2 pt-2 lg:pb-2 ${levelVerified ? "block lg:visible" : "hidden lg:invisible"}`}
+                                >
+                                    export
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>export level</DialogTitle>
+                                    </DialogHeader>
+                                    <code className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono overflow-auto">
+                                        {levelCode}
+                                    </code>
+                                </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                                <DialogTrigger
+                                    className={`text-3xl px-2 pt-2 lg:pb-2`}
+                                >
+                                    import
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>import level</DialogTitle>
+                                    </DialogHeader>
+                                    <Form
+                                        action={(e) => {
+                                            // console.log(e.get("levelCode"));
+
+                                            setLevel(
+                                                JSON.parse(
+                                                    e
+                                                        .get("levelCode")
+                                                        ?.toString()!,
+                                                ),
+                                            );
+                                        }}
+                                    >
+                                        <Field>
+                                            <Textarea
+                                                className="rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono overflow-auto"
+                                                placeholder="paste level code here"
+                                                name="levelCode"
+                                            />
+                                        </Field>
+                                        <Field>
+                                            <Button type="submit">
+                                                import
+                                            </Button>
+                                        </Field>
+                                    </Form>
+                                </DialogContent>
+                            </Dialog>
+                        </>
                     ) : (
                         levelNumInt !== null && (
                             <Link

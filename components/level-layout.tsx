@@ -23,6 +23,7 @@ export default function LevelLayout({
     const [completed, setCompleted] = useState(false);
     const [verified, setVerified] = useState(false);
     const [levelCode, setLevelCode] = useState("");
+    const [importedLevel, setImportedLevel] = useState<Level>();
 
     return (
         <div className="grid grid-rows-[auto_1fr] min-h-svh">
@@ -33,6 +34,7 @@ export default function LevelLayout({
                     levelName={"make your own level!"}
                     levelVerified={verified}
                     levelCode={levelCode}
+                    setLevel={setImportedLevel}
                 />
             ) : (
                 <Header
@@ -47,6 +49,7 @@ export default function LevelLayout({
                     editor={true}
                     setVerified={setVerified}
                     setLevelCode={setLevelCode}
+                    level={importedLevel}
                 />
             ) : (
                 <LevelPage
