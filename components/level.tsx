@@ -179,7 +179,9 @@ export default function LevelPage({
                 return;
             }
 
-            setRules!(level.rules.map((rule, i) => ({ id: i, rule })));
+            const newRules = level.rules.map((rule, i) => ({ id: i, rule }));
+
+            setRules!(newRules);
             setWordConfigs!(
                 level.words.map((w, i) => ({
                     id: i,
@@ -187,7 +189,22 @@ export default function LevelPage({
                     targetWord: w.targetWord,
                 })),
             );
+            setItems({ bank: newRules, solution: [] });
         }, [level]);
+
+        useEffect(() => {
+            const storedRules = localStorage.getItem("editorRules");
+
+            if (storedRules) {
+                setRules!(JSON.parse(storedRules));
+            }
+
+            const storedWordConfigs = localStorage.getItem("editorWordConfigs");
+
+            if (storedWordConfigs) {
+                setWordConfigs!(JSON.parse(storedWordConfigs));
+            }
+        }, []);
     }
 
     const [rules, setRules] = editor
@@ -242,6 +259,8 @@ export default function LevelPage({
                     // ...addedRules,
                 ],
             });
+
+            localStorage.setItem("editorRules", JSON.stringify(rules));
         }, [rules]);
     }
 
@@ -350,52 +369,54 @@ export default function LevelPage({
                 swapSound.play();
             }
 
-            let allEqual = true;
+            if (newWords.length > 0) {
+                let allEqual = true;
 
-            for (let i = 0; i < newWords.length; i++) {
-                if (newWords[i].word !== wordConfigs[i].targetWord) {
-                    allEqual = false;
+                for (let i = 0; i < newWords.length; i++) {
+                    if (newWords[i].word !== wordConfigs[i].targetWord) {
+                        allEqual = false;
 
-                    break;
-                }
-            }
-
-            if (allEqual) {
-                if (timeoutRef.current !== null) {
-                    clearTimeout(timeoutRef.current);
+                        break;
+                    }
                 }
 
-                timeoutRef.current = setTimeout(() => {
-                    setSuccess(true);
-
-                    if (!editor) {
-                        setCompleted(true);
+                if (allEqual) {
+                    if (timeoutRef.current !== null) {
+                        clearTimeout(timeoutRef.current);
                     }
 
-                    if (isFirstSuccessRef.current) {
-                        successSound.play();
-                    }
+                    timeoutRef.current = setTimeout(() => {
+                        setSuccess(true);
 
-                    isFirstSuccessRef.current = false;
-
-                    if (levelNumInt !== null) {
-                        if (levelNumInt === NUM_LEVELS) {
-                            localStorage.removeItem("level");
-                        } else {
-                            localStorage.setItem(
-                                "level",
-                                (levelNumInt + 1).toString(),
-                            );
+                        if (!editor) {
+                            setCompleted(true);
                         }
+
+                        if ((editor && !success) || isFirstSuccessRef.current) {
+                            successSound.play();
+                        }
+
+                        isFirstSuccessRef.current = false;
+
+                        if (levelNumInt !== null) {
+                            if (levelNumInt === NUM_LEVELS) {
+                                localStorage.removeItem("level");
+                            } else {
+                                localStorage.setItem(
+                                    "level",
+                                    (levelNumInt + 1).toString(),
+                                );
+                            }
+                        }
+                    }, 1000);
+                } else {
+                    setSuccess(false);
+
+                    if (timeoutRef.current !== null) {
+                        clearTimeout(timeoutRef.current);
+
+                        timeoutRef.current = null;
                     }
-                }, 1000);
-            } else {
-                setSuccess(false);
-
-                if (timeoutRef.current !== null) {
-                    clearTimeout(timeoutRef.current);
-
-                    timeoutRef.current = null;
                 }
             }
 
@@ -470,6 +491,13 @@ export default function LevelPage({
             // [isWordOverflowing, setIsWordOverflowing] = useState(
             //     [...Array(wordConfigs.length)].map((_) => false),
             // );
+        }, [wordConfigs]);
+
+        useEffect(() => {
+            localStorage.setItem(
+                "editorWordConfigs",
+                JSON.stringify(wordConfigs),
+            );
         }, [wordConfigs]);
     }
 
